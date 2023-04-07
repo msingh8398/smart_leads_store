@@ -37,7 +37,10 @@ async function uploadImage() {
 }
 
 function updateImage(image) {
-    document.getElementById("view").style.display = "block";
+    // document.getElementById("view").style.display = "block";
+    // document.getElementById("my_table_id").style.display = "block";
+    // document.getElementById("view").className = "border";
+    
 
     let imageElem = document.getElementById("image");
     imageElem.src = image["fileUrl"];
@@ -46,16 +49,15 @@ function updateImage(image) {
     return image;
 }
 
-function translateImage(image) {
+function extractImageData(image) {
     // make server call to translate image
     // and return the server upload promise
-    return fetch(serverUrl + "/images/" + image["fileId"] + "/translate-text", {
+    return fetch(serverUrl + "/images/" + image["fileId"] + "/extract-text", {
         method: "POST",
         headers: {
             'Accept': 'application/json',
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({fromLang: "auto", toLang: "en"})
     }).then(response => {
         if (response.ok) {
             return response.json();
@@ -65,26 +67,25 @@ function translateImage(image) {
     })
 }
 
-function annotateImage(translations) {
-    let translationsElem = document.getElementById("translations");
-    while (translationsElem.firstChild) {
-        translationsElem.removeChild(translationsElem.firstChild);
-    }
-    translationsElem.clear
-    for (let i = 0; i < translations.length; i++) {
-        let translationElem = document.createElement("h6");
-        translationElem.appendChild(document.createTextNode(
-            translations[i]["text"] + " -> " + translations[i]["translation"]["translatedText"]
-        ));
-        translationsElem.appendChild(document.createElement("hr"));
-        translationsElem.appendChild(translationElem);
-    }
+
+function showResult(data) {
+    console.log(data.entities);
+    var table_row = '';
+    data.entities.forEach(element => {
+        table_row += '<tr><td class="col-md-2">'+element.Text+'</td><td class="col-md-2">'+element.Type+'</td><td class="col-md-2">'+element.Score+'</td><td class="col-md-2"><a class="btn btn-dark">Edit</a></td></tr>'
+    });
+
+    document.getElementById("table_data").innerHTML = table_row;
+    document.getElementById("view").style.display = "block";
+    document.getElementById("my_table_id").style.display = "block";
+    document.getElementById("view").className = "border";
 }
 
 function uploadAndTranslate() {
     uploadImage()
         .then(image => updateImage(image))
-        .then(image => translateImage(image))
+        .then(image => extractImageData(image))
+        .then(image => showResult(image))
         .catch(error => {
             alert("Error: " + error);
         })
