@@ -69,7 +69,7 @@ function saveData() {
             'Accept': 'application/json',
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({"data":data.entities})
+        body: JSON.stringify({"data":data.entities, "username":sessionStorage.getItem("username")})
     }).then(response => {
         if (response.ok) {
             alert("Data saved successfully");
@@ -148,15 +148,108 @@ function getAllLeads() {
     })
 }
 
-function showAllLeads(data){
-    console.log(data);
+function showAllLeads(new_data){
+    if (new_data.leads.length == 0){
+        alert("No leads found");
+        return;
+    }
+    console.log(new_data);
+    var table_row = '';
+    new_data.leads.forEach(element => {
+        var tmp_row = '<table class="table"><tr><th class="col-md-2">Text</th><th class="col-md-2">Type</th><th class="col-md-2">Score</th></tr>';
+        element.lead_data.forEach(element2 => {
+            tmp_row += '<td class="col-md-2">'+element2.Text+'</td><td class="col-md-2">'+element2.Type+'</td><td class="col-md-2">'+element2.Score+'</td></tr>'
+        });
+        tmp_row += '</table>';
+        if (sessionStorage.getItem("username") == element.username){
+            table_row += '<tr id="data_'+element.lead_id+'"><td class="col-md-2">'+element.lead_id+'</td><td class="col-md-2">'+element.username+'</td><td class="col-md-2">'+tmp_row+'</td><td class="col-md-2"><a class="btn btn-dark">Edit</a> <a class="btn btn-danger" disabled>Delete</a></td></tr>'
+        } else {
+            table_row += '<tr id="data_'+element.lead_id+'"><td class="col-md-2">'+element.lead_id+'</td><td class="col-md-2">'+element.username+'</td><td class="col-md-2">'+tmp_row+'</td><td class="col-md-2"><a class="btn btn-dark" onclick="notAllowed()"}">Edit</a> <a class="btn btn-danger" onclick="notAllowed()">Delete</a></td></tr>'
+        }
+    });
+
+    document.getElementById("leads_data").innerHTML = table_row;
     document.getElementById("data_container").style.display = "block";
 }
 
 function showAllLeadsData(){
-
     document.getElementById("main_page").style.display = "none";
     getAllLeads()
+        .then(data => showAllLeads(data))
+        .catch(error => {
+            alert("Error: " + error);
+        })
+}
+
+function doAuth(){
+    var username = $("#username").val(); 
+    var pass = $("#pass").val();
+    return fetch(serverUrl + "/auth", {
+        method: "POST",
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({"username":username, "pass":pass})
+    }).then(response => {
+        if (response.ok) {
+            return response.json();
+        } else {
+            throw new HttpError(response);
+        }
+    })
+}
+
+function handleSuccess(response){
+    if (response.message == "success"){
+        sessionStorage.setItem("username", response.username);
+        window.location.href = "index.html"
+    } else {
+        alert("Invalid username or password");
+    }
+}
+
+function authenticateUser(){
+    doAuth().then(data => handleSuccess(data))
+    .catch(error => {
+        alert("Error: " + error);
+    })
+}
+
+function logout(){
+    sessionStorage.removeItem("username");
+    window.location.href = "login.html"
+}
+
+function getHome(){
+    window.location.reload();
+} 
+
+function notAllowed(){
+    alert("You are not allowed to edit or delete this lead");
+}
+
+
+function searchLeads() {
+    var search = $("#searchBox").val();
+    return fetch(serverUrl + "/search", {
+        method: "POST",
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({"search":search})
+    }).then(response => {
+        if (response.ok) {
+            return response.json();
+        } else {
+            throw new HttpError(response);
+        }
+    })
+}
+
+function searchData(){
+    searchLeads()
         .then(data => showAllLeads(data))
         .catch(error => {
             alert("Error: " + error);

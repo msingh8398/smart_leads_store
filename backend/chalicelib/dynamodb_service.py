@@ -1,12 +1,14 @@
 import boto3
 
 table_name = "leads_storage"
+auth_table_name = "users"
 
 
 class DynamoDBService:
     def __init__(self):
         self.resource = boto3.resource("dynamodb")
         self.table = self.resource.Table(table_name)
+        self.auth_table = self.resource.Table(auth_table_name)
 
     def put_item(self, item):
         self.table.put_item(Item=item)
@@ -28,3 +30,10 @@ class DynamoDBService:
             UpdateExpression=update_expression,
             ExpressionAttributeValues=expression_attribute_values,
         )
+
+    def get_auth(self, username, password):
+        response = self.auth_table.get_item(Key={"username": username})
+        if response.get("Item"):
+            if response.get("Item").get("password") == password:
+                return True
+        return False

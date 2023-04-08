@@ -45,12 +45,19 @@ def translate_image_text(image_id):
 def save_data_to_db():
     request_data = json.loads(app.current_request.raw_body)
     data = request_data["data"]
+    username = request_data["username"]
     print(data)
+    print(username)
     if data:
         for item in data:
             del item["Id"]
-            item["lead_id"] = int("".join(str(time.time()).split(".")))
-            dynamodb_service.put_item(item)
+        dynamodb_service.put_item(
+            {
+                "lead_data": data,
+                "username": username,
+                "lead_id": int("".join(str(time.time()).split("."))),
+            }
+        )
     return {"message": "Data saved successfully"}
 
 
@@ -58,3 +65,30 @@ def save_data_to_db():
 def get_all_leads():
     response = dynamodb_service.get_all_items()
     return {"leads": response}
+
+
+@app.route("/auth", methods=["POST"], cors=True)
+def auth():
+    request_data = json.loads(app.current_request.raw_body)
+    username = request_data["username"]
+    password = request_data["pass"]
+    response = dynamodb_service.get_auth(username, password)
+    if response:
+        return {"message": "success", "username": username}
+    return {"message": "failure"}
+
+
+@app.route("/search", methods=["POST"], cors=True)
+def search():
+    request_data = json.loads(app.current_request.raw_body)
+    search_text = request_data["search"]
+    response = dynamodb_service.get_all_items()
+    search_data = []
+    print("search text", search_text)
+    for item in response:
+        for data in item.get("lead_data"):
+            if search_text.lower() in data.get("Text").lower():
+                search_data.append(item)
+                break
+    print(search_data)
+    return {"leads": search_data}
