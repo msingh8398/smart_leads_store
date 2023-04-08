@@ -12,9 +12,10 @@ class MedicalComprehendService:
             lines.extend(
                 [
                     {
+                        "Id": entity.get("Id"),
                         "Text": entity.get("Text"),
                         "Type": entity.get("Type"),
-                        "Score": round(entity.get("Score"), 2),
+                        "Score": str(round(entity.get("Score"), 2)),
                     }
                     for entity in response.get("Entities")
                     if entity.get("Score") > 0.5
