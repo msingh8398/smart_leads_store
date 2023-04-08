@@ -92,3 +92,11 @@ def search():
                 break
     print(search_data)
     return {"leads": search_data}
+
+
+@app.route("/delete-lead", methods=["POST"], cors=True)
+def delete_lead():
+    request_data = json.loads(app.current_request.raw_body)
+    lead_id = request_data["lead_id"]
+    dynamodb_service.delete_item({"lead_id": lead_id})
+    return {"message": "success"}

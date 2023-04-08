@@ -1,6 +1,7 @@
 "use strict";
 
-const serverUrl = "http://127.0.0.1:8000";
+// const serverUrl = "http://127.0.0.1:8000";
+const serverUrl = "https://pi78f25116.execute-api.us-east-1.amazonaws.com/api/";
 var data = [];
 async function uploadImage() {
     // encode input file as base64 string for upload
@@ -162,7 +163,7 @@ function showAllLeads(new_data){
         });
         tmp_row += '</table>';
         if (sessionStorage.getItem("username") == element.username){
-            table_row += '<tr id="data_'+element.lead_id+'"><td class="col-md-2">'+element.lead_id+'</td><td class="col-md-2">'+element.username+'</td><td class="col-md-2">'+tmp_row+'</td><td class="col-md-2"><a class="btn btn-dark">Edit</a> <a class="btn btn-danger" disabled>Delete</a></td></tr>'
+            table_row += '<tr id="data_'+element.lead_id+'"><td class="col-md-2">'+element.lead_id+'</td><td class="col-md-2">'+element.username+'</td><td class="col-md-2">'+tmp_row+'</td><td class="col-md-2"><a class="btn btn-dark">Edit</a> <a class="btn btn-danger" onclick="deleteLeadMain('+element.lead_id+')" disabled>Delete</a></td></tr>'
         } else {
             table_row += '<tr id="data_'+element.lead_id+'"><td class="col-md-2">'+element.lead_id+'</td><td class="col-md-2">'+element.username+'</td><td class="col-md-2">'+tmp_row+'</td><td class="col-md-2"><a class="btn btn-dark" onclick="notAllowed()"}">Edit</a> <a class="btn btn-danger" onclick="notAllowed()">Delete</a></td></tr>'
         }
@@ -254,4 +255,40 @@ function searchData(){
         .catch(error => {
             alert("Error: " + error);
         })
+}
+
+function handleDelete(response){
+    if (response.message == "success"){
+        alert("Lead deleted successfully");
+        window.location.reload();
+    } else {
+        alert("Error deleting lead");
+    }
+}
+
+function deleteLead(lead_id) {
+    return fetch(serverUrl + "/delete-lead", {
+        method: "POST",
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({"lead_id":lead_id})
+    }).then(response => {
+        if (response.ok) {
+            return response.json();
+        } else {
+            throw new HttpError(response);
+        }
+    })
+}
+
+function deleteLeadMain(lead_id){
+    if (confirm("Are you sure you want to delete this lead?")){
+        deleteLead(lead_id)
+            .then(data => handleDelete(data))
+            .catch(error => {
+                alert("Error: " + error);
+            })
+    }
 }
